@@ -11,6 +11,12 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 assistant = client.beta.assistants.retrieve(ASSISTANT_ID)
 
 st.title(CHATBOT_NAME)
+st.markdown("""
+Il est préférable de parler à cet assistant en anglais. Mais le français fonctionnera quand même.
+            
+### Context :
+""")
+st.write(assistant.instructions)
 
 if "thread" not in st.session_state:
     st.session_state["thread"] = client.beta.threads.create()
