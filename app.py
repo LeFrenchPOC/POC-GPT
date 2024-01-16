@@ -4,25 +4,42 @@ from utils import get_assistant_response, upload_files
 
 CHATBOT_NAME = st.secrets["CHATBOT_NAME"]
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-ASSISTANT_ID = st.secrets["ASST_ID"]
+assistants_ids = st.secrets["ASST_IDs"]
 ACCEPTED_FILE_TYPES = ["pdf", "txt", "png", "jpeg", "jpg"]
 
-client = OpenAI(api_key=OPENAI_API_KEY)
-assistant = client.beta.assistants.retrieve(ASSISTANT_ID)
 
-st.title(CHATBOT_NAME)
+client = OpenAI(api_key=OPENAI_API_KEY)
+
+if "assistants" not in st.session_state:
+    st.session_state.assistants = []
+    for assistant_id in assistants_ids:
+        st.session_state.assistants.append(client.beta.assistants.retrieve(assistant_id))
+
+if "current_assistant" not in st.session_state:
+    st.session_state.current_assistant = None
+
+with st.sidebar:
+    st.title("POC GPT *Assistants*")
+    name = st.selectbox(
+    "Choisissez l'assistant que vous souhaitez :",
+    (a.name for a in st.session_state.assistants)
+    )
+    for ass in st.session_state.assistants:
+        if ass.name == name:
+            if ass != st.session_state.current_assistant:
+                st.session_state.current_assistant = ass
+                st.session_state["thread"] = client.beta.threads.create()
+                st.session_state.messages = []
+
+
+st.title(st.session_state.current_assistant.name)
 st.markdown("""
 Il est préférable de parler à cet assistant en anglais. Mais le français fonctionnera quand même.
             
 ### Context :
 """)
-st.write(assistant.instructions)
+st.write(st.session_state.current_assistant.instructions)
 
-if "thread" not in st.session_state:
-    st.session_state["thread"] = client.beta.threads.create()
-
-if "messages" not in st.session_state:
-    st.session_state.messages = []
 
 # This will load initial messages
 for message in st.session_state.messages:
@@ -51,7 +68,7 @@ if prompt:
 
     with st.chat_message("assistant"):
         file_ids = [OpenAI_file.id for OpenAI_file in OpenAI_files]
-        response = get_assistant_response(prompt, client, assistant, st.session_state.thread, file_ids)
+        response = get_assistant_response(prompt, client, st.session_state.current_assistant, st.session_state.thread, file_ids)
         st.markdown(response)
 
     # The assistant never outputs files
