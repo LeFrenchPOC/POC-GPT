@@ -1,24 +1,29 @@
 from openai import OpenAI
 import streamlit as st
 from utils import get_assistant_response, upload_files
+from PIL import Image
+
 
 CHATBOT_NAME = st.secrets["CHATBOT_NAME"]
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 assistants_ids = st.secrets["ASST_IDs"]
 ACCEPTED_FILE_TYPES = ["pdf", "txt", "png", "jpeg", "jpg"]
 
-
 client = OpenAI(api_key=OPENAI_API_KEY)
+logo = Image.open("assets/french_poc_logo.png")
 
 if "assistants" not in st.session_state:
     st.session_state.assistants = []
     for assistant_id in assistants_ids:
         st.session_state.assistants.append(client.beta.assistants.retrieve(assistant_id))
+    
+    print(st.session_state.assistants)    
 
 if "current_assistant" not in st.session_state:
     st.session_state.current_assistant = None
 
 with st.sidebar:
+    st.image(logo)
     st.title("POC GPT *Assistants*")
     name = st.selectbox(
     "Choisissez l'assistant que vous souhaitez :",
@@ -39,6 +44,7 @@ Il est préférable de parler à cet assistant en anglais. Mais le français fon
 ### Context :
 """)
 st.write(st.session_state.current_assistant.instructions)
+st.write("Model : ", st.session_state.current_assistant.model)
 
 
 # This will load initial messages
