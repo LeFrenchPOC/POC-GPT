@@ -8,6 +8,7 @@ CHATBOT_NAME = st.secrets["CHATBOT_NAME"]
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 assistants_ids = st.secrets["ASST_IDs"]
 ACCEPTED_FILE_TYPES = ["pdf", "txt", "png", "jpeg", "jpg"]
+MODELS = ["gpt-3.5-turbo", "gpt-4"]
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 logo = Image.open("assets/french_poc_logo.png")
@@ -35,6 +36,21 @@ with st.sidebar:
                 st.session_state.current_assistant = ass
                 st.session_state["thread"] = client.beta.threads.create()
                 st.session_state.messages = []
+
+    with st.expander("Ajouter un assistant"):
+        with st.form("Assistant form", clear_on_submit=True, border=False):
+            assistant_name = st.text_input("Entrer le nom de l'assistant")
+            assistant_model = st.selectbox("Sélectionner un modèle", MODELS)
+            assistant_code_inter = st.checkbox("Interpréter le code")
+            assistant_instruction = st.text_area("Remplir le contexte de l'assistant")
+            assistant_save = st.form_submit_button("Sauvegarder")
+            if assistant_save:
+                st.session_state.assistants.append(client.beta.assistants.create(
+                    name=assistant_name,
+                    instructions=assistant_instruction,
+                    model=assistant_model,
+                    tools=[{"type": "code_interpreter"}] if assistant_code_inter else []
+                ))
 
 
 st.title(st.session_state.current_assistant.name)
